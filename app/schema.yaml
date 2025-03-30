@@ -48,6 +48,73 @@ paths:
               schema:
                 $ref: '#/components/schemas/Recipe'
           description: ''
+  /api/recipe/recipes/{id}:
+    get:
+      operationId: recipe_recipes_retrieve
+      description: handle detail of recipe in id
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - recipe
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+    put:
+      operationId: recipe_recipes_update
+      description: Update an existing recipe by providing all required fields.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - recipe
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecipeDetail'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RecipeDetail'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RecipeDetail'
+        required: true
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecipeDetail'
+          description: ''
+        '400':
+          description: Bad request
+    delete:
+      operationId: recipe_recipes_destroy
+      description: handle detail of recipe in id
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - recipe
+      security:
+      - tokenAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/schema/:
     get:
       operationId: schema_retrieve
@@ -367,6 +434,34 @@ components:
         link:
           type: string
           maxLength: 255
+      required:
+      - id
+      - price
+      - time_minutes
+      - title
+    RecipeDetail:
+      type: object
+      description: Serializer for recipe detail view.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          maxLength: 255
+        time_minutes:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+        link:
+          type: string
+          maxLength: 255
+        description:
+          type: string
       required:
       - id
       - price
