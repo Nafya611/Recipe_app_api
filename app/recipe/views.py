@@ -6,21 +6,20 @@ from rest_framework import status
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 from drf_spectacular.utils import extend_schema, OpenApiResponse
-from recipe.serializers import RecipeSerializer, RecipeDetailSerializer
-from core.models import Recipe
+from recipe.serializers import RecipeSerializer, RecipeDetailSerializer,TagSerializer
+from core.models import Recipe,Tag
 from django.shortcuts import get_object_or_404
 
 @extend_schema(
     methods=['POST'],
-    request=RecipeSerializer,  # Explicitly define request body
-    responses={201: RecipeSerializer}  # Define response schema
+    request=RecipeSerializer,
+    responses={201: RecipeSerializer}
 )
 @extend_schema(
     methods=['GET'],
-    responses={200: RecipeSerializer(many=True)}  # Define response for GET
+    responses={200: RecipeSerializer(many=True)}
 
 )
-
 
 @api_view(['POST', 'GET'])
 @authentication_classes([TokenAuthentication])
@@ -74,3 +73,72 @@ def recipe_detail(request,pk):
     elif request.method == 'DELETE':
         recipe.delete()
         return Response({"message":"Recipe deleted successfully."},status=status.HTTP_204_NO_CONTENT)
+
+
+
+@extend_schema(
+    methods=['POST'],
+    request=TagSerializer,
+    responses={
+        200: TagSerializer,
+        400: OpenApiResponse(
+            response={"message": "bad request"},
+            description="Invalid request data"
+        ),
+    },
+)
+@api_view(['GET','POST'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def tag_list(request):
+
+    if request.method == 'GET':
+        tag= Tag.objects.filter(user=request.user).order_by('name')
+        serializer= TagSerializer(tag, many=True)
+        return Response(serializer.data)
+
+    elif request.method == 'POST':
+        serializer= TagSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(user=request.user)
+            return Response(serializer.data,status=status.HTTP_201_CREATED)
+        return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
+
+@extend_schema(
+        methods=['PUT'],
+        request=TagSerializer,
+        responses={
+            200:TagSerializer,
+            400:OpenApiResponse({'message':'bad request'})
+        }
+)
+@api_view(['GET','PUT','DELETE'])
+@permission_classes([IsAuthenticated])
+@authentication_classes([TokenAuthentication])
+
+def tag_detail(request,name):
+    try:
+        tag = Tag.objects.get(name=name, user=request.user)
+    except Tag.DoesNotExist:
+        return Response({"error": "Tag not found"}, status=status.HTTP_404_NOT_FOUND)
+    if request.method == 'GET':
+        serializer = TagSerializer(tag)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    elif request.method == 'PUT':
+        serializer = TagSerializer(tag, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save(user=request.user)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    elif request.method == 'DELETE':
+        tag.delete()
+        return Response({"message": "Tag deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
+
+
+
+
+
+
+
