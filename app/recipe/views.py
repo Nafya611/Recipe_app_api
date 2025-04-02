@@ -15,12 +15,6 @@ from django.shortcuts import get_object_or_404
     request=RecipeSerializer,
     responses={201: RecipeSerializer}
 )
-@extend_schema(
-    methods=['GET'],
-    responses={200: RecipeSerializer(many=True)}
-
-)
-
 @api_view(['POST', 'GET'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
@@ -34,14 +28,15 @@ def recipe_list(request):
         return Response(serializer.data)
 
     elif request.method == 'POST':
-        serializer = RecipeSerializer(data=request.data)
+        serializer = RecipeSerializer(data=request.data, context={'request': request})
+
         if serializer.is_valid():
             serializer.save(user=request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @extend_schema(
-    methods=['PUT'],
+    methods=['PUT','PATCH'],
     description="Update an existing recipe by providing all required fields.",
     request=RecipeDetailSerializer,
     responses={
@@ -49,7 +44,7 @@ def recipe_list(request):
         400: OpenApiResponse(description="Bad request")
     },
 )
-@api_view(['PUT','GET','DELETE'])
+@api_view(['PUT','GET','PATCH','DELETE'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
 def recipe_detail(request,pk):
@@ -64,11 +59,19 @@ def recipe_detail(request,pk):
         return Response(serializer.data)
 
     elif request.method == 'PUT':
-        serializer =RecipeDetailSerializer(recipe,data=request.data, partial=True)
+        serializer =RecipeDetailSerializer(recipe,data=request.data,context= {'request':request })
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    elif request.method == 'PATCH':
+        serializer=RecipeDetailSerializer(recipe,data=request.data,context= {'request':request},partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data,status=status.HTTP_200_OK)
+        return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
+
 
     elif request.method == 'DELETE':
         recipe.delete()
@@ -112,7 +115,18 @@ def tag_list(request):
             400:OpenApiResponse({'message':'bad request'})
         }
 )
-@api_view(['GET','PUT','DELETE'])
+@extend_schema(
+    methods=['PATCH'],
+    request=TagSerializer,
+    responses={
+            200:TagSerializer,
+            400:OpenApiResponse({'message':'bad request'})
+        }
+
+
+
+)
+@api_view(['GET','PUT','PATCH','DELETE'])
 @permission_classes([IsAuthenticated])
 @authentication_classes([TokenAuthentication])
 
@@ -126,11 +140,19 @@ def tag_detail(request,name):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     elif request.method == 'PUT':
-        serializer = TagSerializer(tag, data=request.data, partial=True)
+        serializer = TagSerializer(tag, data=request.data)
         if serializer.is_valid():
             serializer.save(user=request.user)
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    elif request.method == 'PATCH':
+        serializer= TagSerializer(tag,data=request.data,partial=True)
+        if serializer.is_valid():
+            serializer.save(user=request.user)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
 
     elif request.method == 'DELETE':
         tag.delete()
