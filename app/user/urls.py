@@ -1,13 +1,13 @@
 from django.urls  import path
 
-from user import views
+from .views import create_user,create_token,manage_user
 
 # app_name= 'user'
 
 urlpatterns= [
-    path('create/', views.CreateUserView.as_view(),name= 'create'),
-    path('token/', views.CreateTokenView.as_view(),name='token'),
-    path('me/', views.ManageUserView.as_view(),name= 'me')
+    path('create/', create_user,name= 'create'),
+    path('token/',create_token,name='token'),
+    path('me/',manage_user,name= 'me')
 
 ]
 
