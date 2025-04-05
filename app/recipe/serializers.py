@@ -4,7 +4,8 @@ serializers for recipe api
 from rest_framework import serializers
 from core.models import (
     Recipe,
-    Tag
+    Tag,
+    Ingredient
 )
 
 class TagSerializer(serializers.ModelSerializer):
@@ -20,6 +21,17 @@ class TagSerializer(serializers.ModelSerializer):
             if self.partial:
                 for field in self.fields.values():
                     field.required = False
+
+
+
+class IngredientSerializer(serializers.ModelSerializer):
+    """serializer for Ingeredients"""
+    class Meta:
+        model= Ingredient
+        fields=['id','name']
+        read_only_fields= ['id']
+
+
 
 class RecipeSerializer(serializers.ModelSerializer):
     """Serializer for recipes"""

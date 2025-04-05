@@ -6,8 +6,8 @@ from rest_framework import status
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 from drf_spectacular.utils import extend_schema, OpenApiResponse
-from recipe.serializers import RecipeSerializer, RecipeDetailSerializer,TagSerializer
-from core.models import Recipe,Tag
+from recipe.serializers import RecipeSerializer, RecipeDetailSerializer,TagSerializer,IngredientSerializer
+from core.models import Recipe,Tag,Ingredient
 from django.shortcuts import get_object_or_404
 
 @extend_schema(
@@ -157,6 +157,29 @@ def tag_detail(request,name):
     elif request.method == 'DELETE':
         tag.delete()
         return Response({"message": "Tag deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
+
+@extend_schema(
+        methods=['POST'],
+        request=IngredientSerializer,
+        responses=IngredientSerializer
+)
+@api_view(['POST','GET'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def ingredient_list(request):
+    """"""
+
+    if request.method == 'GET':
+        ingredient=Ingredient.objects.filter(user=request.user).order_by('name')
+        serializer=IngredientSerializer(ingredient,many=True)
+        return Response(serializer.data)
+
+    elif request.method == 'POST':
+        serializer= IngredientSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(user=request.user)
+            return Response(serializer.data,status=status.HTTP_201_CREATED)
+        return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
 
 
 
