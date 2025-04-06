@@ -181,6 +181,43 @@ def ingredient_list(request):
             return Response(serializer.data,status=status.HTTP_201_CREATED)
         return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
 
+@extend_schema(
+        methods=['PUT','PATCH'],
+        request=IngredientSerializer,
+        responses=IngredientSerializer
+)
+@api_view(['GET','PUT','PATCH','DELETE'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def ingredient_detail(request,name):
+    try:
+        ingredient= Ingredient.objects.get(user=request.user,name=name)
+    except Ingredient.DoesNotExist:
+        Response({'error':'ingredient is not found'},status=status.HTTP_404_NOT_FOUND)
+
+    if request.method == 'GET':
+        serializer= IngredientSerializer(ingredient)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    elif request.method == 'PUT':
+        serializer= IngredientSerializer(ingredient,data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data,status=status.HTTP_200_OK)
+        return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
+    elif request.method == 'PATCH':
+        serializer= IngredientSerializer(ingredient,data=request.data,partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data,status=status.HTTP_200_OK)
+        return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
+
+    elif request.method == 'DELETE':
+        ingredient.delete()
+        return Response({'message':'ingredient deleted succesfully'},status=status.HTTP_204_NO_CONTENT)
+
+
+
+
 
 
 
