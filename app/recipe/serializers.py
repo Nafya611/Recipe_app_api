@@ -8,6 +8,11 @@ from core.models import (
     Ingredient
 )
 
+import os
+import uuid
+from django.core.files.storage import default_storage
+from django.conf import settings
+
 class TagSerializer(serializers.ModelSerializer):
     """serializer for Tag model"""
 
@@ -41,8 +46,9 @@ class RecipeSerializer(serializers.ModelSerializer):
 
     class Meta:
         model= Recipe
-        fields= ['id','title','time_minutes','price','link','tags','ingredients']
+        fields= ['id','title','time_minutes','price','link','tags','ingredients','image1',]
         read_only_fields= ['id']
+
 
 
     def __init__(self, *args, **kwargs):
@@ -64,6 +70,8 @@ class RecipeSerializer(serializers.ModelSerializer):
 
     def _get_or_create_ingredients(self, ingredients, recipe):
         """Handle getting or creating ingredients"""
+        if not ingredients:
+            return
         auth_user = self.context['request'].user
         for ingredient in ingredients:
             ingredient_obj, _=Ingredient.objects.get_or_create(user=auth_user, **ingredient)
@@ -105,6 +113,4 @@ class RecipeDetailSerializer(RecipeSerializer):
 
     class Meta(RecipeSerializer.Meta):
         fields=RecipeSerializer.Meta.fields+ ['description']
-
-
 

@@ -1,8 +1,9 @@
 from rest_framework.decorators import (
-    api_view, authentication_classes, permission_classes
+    api_view, authentication_classes, permission_classes,parser_classes
 )
+from rest_framework.parsers import MultiPartParser,FormParser
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework import status,serializers
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 from drf_spectacular.utils import extend_schema, OpenApiResponse
@@ -36,7 +37,29 @@ def recipe_list(request):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @extend_schema(
-    methods=['PUT','PATCH'],
+    methods=['PATCH'],
+    request=RecipeDetailSerializer,
+    responses={
+        200: RecipeDetailSerializer,
+        400: OpenApiResponse(description="Bad request")
+    },
+)
+@api_view(['PATCH'])
+@parser_classes([MultiPartParser, FormParser])
+def upload_recipe_photos_view(request, recipe_id):
+    """
+    Endpoint for uploading photos to specific image fields in the Recipe model.
+    """
+    recipe = get_object_or_404(Recipe, pk=recipe_id)
+    serializer = RecipeSerializer(recipe, data=request.data, partial=True, context={'request': request})
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@extend_schema(
+    methods=['PUT'],
     description="Update an existing recipe by providing all required fields.",
     request=RecipeDetailSerializer,
     responses={
@@ -44,7 +67,7 @@ def recipe_list(request):
         400: OpenApiResponse(description="Bad request")
     },
 )
-@api_view(['PUT','GET','PATCH','DELETE'])
+@api_view(['PUT','GET','DELETE'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
 def recipe_detail(request,pk):
@@ -64,14 +87,6 @@ def recipe_detail(request,pk):
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    elif request.method == 'PATCH':
-        serializer=RecipeDetailSerializer(recipe,data=request.data,context= {'request':request},partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data,status=status.HTTP_200_OK)
-        return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
-
 
     elif request.method == 'DELETE':
         recipe.delete()
