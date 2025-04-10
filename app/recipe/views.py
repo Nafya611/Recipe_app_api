@@ -6,29 +6,74 @@ from rest_framework.response import Response
 from rest_framework import status,serializers
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
-from drf_spectacular.utils import extend_schema, OpenApiResponse
+from drf_spectacular.utils import extend_schema, OpenApiResponse,OpenApiParameter
 from recipe.serializers import RecipeSerializer, RecipeDetailSerializer,TagSerializer,IngredientSerializer
 from core.models import Recipe,Tag,Ingredient
 from django.shortcuts import get_object_or_404
+
+
+@extend_schema(
+    parameters=[
+        OpenApiParameter(
+            name='tags',
+            type={'type': 'array', 'items': {'type': 'string'}},
+            location=OpenApiParameter.QUERY,
+            description='Comma-separated list of tag names (e.g., ?tags=vegan,quick)',
+            explode=False,
+            required=False,
+        ),
+        OpenApiParameter(
+            name='ingredients',
+            type={'type': 'array', 'items': {'type': 'string'}},
+            location=OpenApiParameter.QUERY,
+            description='Comma-separated list of ingredient names (e.g., ?ingredients=onion,tomato)',
+            explode=False,
+            required=False,
+        ),
+    ]
+)
+@api_view(['GET'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def filter_recipes(request):
+    """
+    Filter recipes by a list of tags and/or ingredients.
+    Example:
+    /api/recipes/filter/?tags=vegan,quick&ingredients=tomato,onion
+    """
+    tags_param = request.GET.get('tags')
+    ingredients_param = request.GET.get('ingredients')
+    recipes = Recipe.objects.filter(user=request.user)
+
+    if tags_param:
+        tag_names = tags_param.split(',')
+        tags = Tag.objects.filter(name__in=tag_names)
+        recipes = recipes.filter(tags__in=tags)
+
+    if ingredients_param:
+        ingredient_names = ingredients_param.split(',')
+        ingredients = Ingredient.objects.filter(name__in=ingredient_names)
+        recipes = recipes.filter(ingredients__in=ingredients)
+
+    recipes = recipes.distinct()
+    serializer = RecipeDetailSerializer(recipes, many=True)
+    return Response(serializer.data)
 
 @extend_schema(
     methods=['POST'],
     request=RecipeSerializer,
     responses={201: RecipeSerializer}
 )
-@api_view(['POST', 'GET'])
+@api_view(['POST'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
-def recipe_list(request):
+def create_recipe(request):
     """
     Handle listing all recipes for the authenticated user or creating a new one.
     """
-    if request.method == 'GET':
-        recipes = Recipe.objects.filter(user=request.user).order_by('id')
-        serializer = RecipeSerializer(recipes, many=True)
-        return Response(serializer.data)
 
-    elif request.method == 'POST':
+
+    if request.method == 'POST':
         serializer = RecipeSerializer(data=request.data, context={'request': request})
 
         if serializer.is_valid():
@@ -229,13 +274,4 @@ def ingredient_detail(request,name):
     elif request.method == 'DELETE':
         ingredient.delete()
         return Response({'message':'ingredient deleted succesfully'},status=status.HTTP_204_NO_CONTENT)
-
-
-
-
-
-
-
-
-
 

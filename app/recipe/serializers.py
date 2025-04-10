@@ -19,7 +19,7 @@ class TagSerializer(serializers.ModelSerializer):
     class Meta:
         model= Tag
         fields=['id','name']
-        read_only_fileds= ['id']
+        read_only_fields= ['id']
 
     def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
@@ -49,6 +49,13 @@ class RecipeSerializer(serializers.ModelSerializer):
         fields= ['id','title','time_minutes','price','link','tags','ingredients','image1',]
         read_only_fields= ['id']
 
+        extra_kwargs = {
+            'ingredients': {'required': False},
+            'tags': {'required': False},
+        }
+
+
+
 
 
     def __init__(self, *args, **kwargs):
@@ -63,6 +70,8 @@ class RecipeSerializer(serializers.ModelSerializer):
     def _get_or_create_tags(self, tags, recipe):
         """Handle getting or creating tags"""
         auth_user = self.context['request'].user
+        if not tags:
+            return
         for tag in tags:
             tag_obj, _ = Tag.objects.get_or_create(user=auth_user, **tag)
             recipe.tags.add(tag_obj)
@@ -80,7 +89,7 @@ class RecipeSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         """Create a recipe with associated tags"""
         tags = validated_data.pop('tags', [])
-        ingredients=validated_data.pop('ingredient',[])
+        ingredients=validated_data.pop('ingredients',[])
         recipe = Recipe.objects.create(**validated_data)
         self._get_or_create_tags(tags,recipe)
         self._get_or_create_ingredients(ingredients,recipe)
