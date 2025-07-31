@@ -240,3 +240,65 @@ The API includes interactive documentation powered by drf-spectacular:
 - **Swagger UI**: http://localhost:8000/api/docs/schema/swagger-ui/
 - **ReDoc**: http://localhost:8000/api/docs/schema/redoc/
 - **OpenAPI Schema**: http://localhost:8000/api/docs/schema/
+
+## 🚀 Deployment
+
+### Deploy to Render
+
+This project is configured for easy deployment on Render.com:
+
+1. **Fork/Clone this repository** to your GitHub account
+
+2. **Create a new Web Service** on Render:
+   - Connect your GitHub repository
+   - Use the following settings:
+     - **Build Command**: `./build.sh`
+     - **Start Command**: `gunicorn wsgi:application`
+     - **Environment**: `Python 3`
+
+3. **Create a PostgreSQL database** on Render:
+   - Add a new PostgreSQL service
+   - Copy the database URL
+
+4. **Set Environment Variables** in your Render web service:
+   ```
+   DATABASE_URL=<your-postgres-database-url>
+   SECRET_KEY=<generate-a-secure-secret-key>
+   DEBUG=false
+   PYTHON_VERSION=3.11.7
+   ```
+
+5. **Deploy**: Render will automatically build and deploy your application
+
+### Alternative Deployment using render.yaml
+
+You can also use the included `render.yaml` file for Infrastructure as Code deployment:
+
+1. Connect your GitHub repository to Render
+2. Render will automatically detect the `render.yaml` file
+3. It will create both the web service and PostgreSQL database
+4. Set the `DATABASE_URL` environment variable to connect them
+
+### Production Checklist
+
+- [ ] Set a secure `SECRET_KEY`
+- [ ] Set `DEBUG=false`
+- [ ] Configure `DATABASE_URL` with your PostgreSQL connection
+- [ ] Update `CORS_ALLOWED_ORIGINS` in settings.py with your frontend domain
+- [ ] Set up proper domain and SSL (Render handles this automatically)
+
+## 🔧 Troubleshooting Deployment
+
+### Common Render Deployment Issues
+
+1. **Build Fails**: Check that `build.sh` has execute permissions
+2. **Static Files Not Loading**: Ensure WhiteNoise is properly configured
+3. **Database Connection Error**: Verify `DATABASE_URL` environment variable
+4. **Import Errors**: Make sure all dependencies are in `requirements.txt`
+
+### Logs and Debugging
+
+```bash
+# View Render logs in the dashboard or via CLI
+render logs --service your-service-name
+```

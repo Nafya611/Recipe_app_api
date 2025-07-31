@@ -3,3 +3,6 @@ djangorestframework>=3.14,<4.0
 psycopg2-binary>=2.9.0,<3.0
 drf-spectacular>=0.26.0
 pillow>8.2.0
+dj-database-url>=2.1.0
+whitenoise>=6.6.0
+gunicorn>=21.2.0

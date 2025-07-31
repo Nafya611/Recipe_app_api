@@ -20,12 +20,17 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-ox+&od++vxti&*+(+$0e3hd^=*kzv^%9q5y*8j-dw=u9o3s0a5'
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-ox+&od++vxti&*+(+$0e3hd^=*kzv^%9q5y*8j-dw=u9o3s0a5')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DEBUG', 'False').lower() == 'true'
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*'] if DEBUG else [
+    'localhost',
+    '127.0.0.1',
+    '.onrender.com',  # Allow all subdomains on Render
+    os.environ.get('RENDER_EXTERNAL_HOSTNAME', ''),
+]
 
 
 # Application definition
@@ -47,6 +52,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # Add WhiteNoise for production
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -79,18 +85,28 @@ WSGI_APPLICATION = 'app.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'HOST': os.environ.get('DB_HOST'),
-        'NAME': os.environ.get('DB_NAME'),
-        'USER': os.environ.get('DB_USER'),
-        'PASSWORD': os.environ.get('DB_PASS'),
-        'PORT': os.environ.get('DB_PORT')
+# Check if we have a DATABASE_URL (for Render deployment)
+import dj_database_url
 
+DATABASE_URL = os.environ.get('DATABASE_URL')
 
+if DATABASE_URL:
+    # Production database configuration (Render)
+    DATABASES = {
+        'default': dj_database_url.parse(DATABASE_URL)
     }
-}
+else:
+    # Development database configuration (Docker)
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'HOST': os.environ.get('DB_HOST'),
+            'NAME': os.environ.get('DB_NAME'),
+            'USER': os.environ.get('DB_USER'),
+            'PASSWORD': os.environ.get('DB_PASS'),
+            'PORT': os.environ.get('DB_PORT', '5432')
+        }
+    }
 
 
 # Password validation
@@ -127,11 +143,20 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
-STATIC_URL = '/static/static/'
-MEDIA_URL = '/static/media/'
+STATIC_URL = '/static/'
+MEDIA_URL = '/media/'
 
-MEDIA_ROOT= '/vol/web/media'
-STATIC_ROOT = '/vol/web/static'
+# Production static files settings for Render
+if not DEBUG:
+    STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+    MEDIA_ROOT = os.path.join(BASE_DIR, 'mediafiles')
+
+    # Enable static file compression and caching
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+else:
+    # Development settings (Docker)
+    STATIC_ROOT = '/vol/web/static'
+    MEDIA_ROOT = '/vol/web/media'
 
 
 # Default primary key field type
@@ -148,4 +173,24 @@ REST_FRAMEWORK = {
 SPECTACULAR_SETTINGS = {
     'COMPONENT_SPLIT_REQUEST': True,
 }
+
+# Production security settings
+if not DEBUG:
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_SECONDS = 31536000
+    SECURE_REDIRECT_EXEMPT = []
+    # Only enable SSL redirect if HTTPS is available
+    SECURE_SSL_REDIRECT = os.environ.get('ENABLE_HTTPS', 'false').lower() == 'true'
+    SESSION_COOKIE_SECURE = os.environ.get('ENABLE_HTTPS', 'false').lower() == 'true'
+    CSRF_COOKIE_SECURE = os.environ.get('ENABLE_HTTPS', 'false').lower() == 'true'
+    USE_TZ = True
+
+# CORS settings for API
+CORS_ALLOW_ALL_ORIGINS = DEBUG
+if not DEBUG:
+    CORS_ALLOWED_ORIGINS = [
+        "https://your-frontend-domain.com",  # Add your frontend domain here
+    ]
 

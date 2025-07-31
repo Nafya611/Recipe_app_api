@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: recipe-api
+    env: python
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn wsgi:application"
+    plan: free
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.7
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: false
+      - key: RENDER_EXTERNAL_HOSTNAME
+        sync: false
+
+  - type: pserv
+    name: recipe-api-db
+    env: postgres
+    plan: free
+    ipAllowList: []
