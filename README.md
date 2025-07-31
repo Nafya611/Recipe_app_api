@@ -291,10 +291,43 @@ You can also use the included `render.yaml` file for Infrastructure as Code depl
 
 ### Common Render Deployment Issues
 
-1. **Build Fails**: Check that `build.sh` has execute permissions
-2. **Static Files Not Loading**: Ensure WhiteNoise is properly configured
-3. **Database Connection Error**: Verify `DATABASE_URL` environment variable
-4. **Import Errors**: Make sure all dependencies are in `requirements.txt`
+1. **Application Exits Early**
+   - Check environment variables are set correctly
+   - Verify `DATABASE_URL` is configured
+   - Run `python test_wsgi.py` locally to test WSGI setup
+
+2. **Build Fails**:
+   - Check that `build.sh` has execute permissions
+   - Verify all dependencies are in `requirements.txt`
+
+3. **Static Files Not Loading**:
+   - Ensure WhiteNoise is properly configured
+   - Check `STATIC_ROOT` path in settings
+
+4. **Database Connection Error**:
+   - Verify `DATABASE_URL` environment variable
+   - Ensure PostgreSQL service is running
+
+5. **Import Errors**:
+   - Make sure all dependencies are in `requirements.txt`
+   - Check Python path configuration in `wsgi.py`
+
+### Debugging Steps
+
+1. **Test WSGI locally**:
+   ```bash
+   python test_wsgi.py
+   ```
+
+2. **Check Django configuration**:
+   ```bash
+   cd app && python manage.py check --deploy
+   ```
+
+3. **Test database connection**:
+   ```bash
+   cd app && python manage.py shell -c "from django.db import connection; connection.ensure_connection(); print('Database OK')"
+   ```
 
 ### Logs and Debugging
 
@@ -302,3 +335,11 @@ You can also use the included `render.yaml` file for Infrastructure as Code depl
 # View Render logs in the dashboard or via CLI
 render logs --service your-service-name
 ```
+
+### Environment Variables Checklist
+
+Make sure these are set in your Render service:
+- [ ] `DATABASE_URL` - PostgreSQL connection string
+- [ ] `SECRET_KEY` - Django secret key (auto-generated recommended)
+- [ ] `DEBUG=false` - Disable debug mode in production
+- [ ] `PYTHON_VERSION=3.11.7` - Specify Python version

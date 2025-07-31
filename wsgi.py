@@ -10,7 +10,11 @@ from pathlib import Path
 
 # Add the app directory to Python path
 BASE_DIR = Path(__file__).resolve().parent
-sys.path.append(str(BASE_DIR / 'app'))
+app_dir = BASE_DIR / 'app'
+sys.path.insert(0, str(app_dir))
+
+# Change to the app directory
+os.chdir(str(app_dir))
 
 # Set the Django settings module
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'app.settings')

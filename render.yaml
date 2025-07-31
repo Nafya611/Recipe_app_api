@@ -3,7 +3,7 @@ services:
     name: recipe-api
     env: python
     buildCommand: "./build.sh"
-    startCommand: "gunicorn wsgi:application"
+    startCommand: "./start.sh"
     plan: free
     envVars:
       - key: PYTHON_VERSION
